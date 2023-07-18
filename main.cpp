@@ -9,6 +9,7 @@ struct Matrix4x4
 {
 	float m[4][4];
 };
+
 const char kWindowTitle[] = "LE2B_27_ヤマカワトモキ_タイトル";
 
 Vector3 Add(const Vector3& a, const Vector3& b) {
@@ -463,6 +464,19 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 	Novice::DrawLine((int)points[2].x, (int)points[2].y, (int)points[1].x, (int)points[1].y, color);
 	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[0].x, (int)points[0].y, color);
 }
+bool IsCollision(const Segment& segment, const Plane& plane) {
+	float dot = Dot(segment.diff, plane.normal);
+	if (dot == 0.0f) {
+		return false;
+	}
+	float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
+	if (0.0f <= t && t <= 1.0f) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -483,12 +497,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraPosition{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
+	Segment segment{ { 0.0f, 0.0f, 0.0f }, {0.0f,1.0f,0.0f} };
+
+	//Sphere sphere1{ { 1.0f, 0.0f, 0.0f }, 1.0f };
 
 
-	Sphere sphere1{ { 1.0f, 0.0f, 0.0f }, 1.0f };
-
-
-	Plane plane = { {1.0f,1.0f,1.0f},1.0f };
+	Plane plane = { {0.0f,1.0f,0.0f},1.0f };
 	unsigned int color = BLACK;
 	while (Novice::ProcessMessage() == 0) {
 		// フレームの開始
@@ -515,16 +529,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			translate.y += 0.1f;
 		}
 		if (keys[DIK_LEFT]) {
-			rotate.y -= 0.05f;
+			rotate.y -= 0.01f;
 		}
 		if (keys[DIK_RIGHT]) {
-			rotate.y += 0.05f;
+			rotate.y += 0.01f;
 		}
 		if (keys[DIK_DOWN]) {
-			rotate.x -= 0.05f;
+			rotate.x -= 0.01f;
 		}
 		if (keys[DIK_UP]) {
-			rotate.x += 0.05f;
+			rotate.x += 0.01f;
 		}
 		if (Novice::GetWheel() > 0) {
 			cameraPosition.z += 0.5f;
@@ -539,18 +553,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-
+		Vector3 start = Transform(Transform(segment.origin, worldViewProjectionMatrix), viewPortMatrix);
+		Vector3 end = Transform(Transform(Add(segment.origin, segment.diff), worldViewProjectionMatrix), viewPortMatrix);
 
 		ImGui::Begin("Window");
-		ImGui::DragFloat3("Sphere1 center", &sphere1.center.x, 0.01f);
-		ImGui::DragFloat("Sphere1 radius", &sphere1.radius, 0.01f);
+		ImGui::DragFloat3("segment diff", &segment.diff.x, 0.01f);
+		ImGui::DragFloat3("segment origin", &segment.origin.x, 0.01f);
 		ImGui::DragFloat3("Plane normal", &plane.normal.x, 0.01f);
-		plane.normal = Normalise(plane.normal);
+
 		ImGui::DragFloat("Plane Distance", &plane.distance, 0.01f);
 		ImGui::TextUnformatted("UP:DOWN:LEFT:RIGHT::cameraRotate");
 		ImGui::End();
-
-		if (IsCollision(sphere1, plane)) {
+		plane.normal = Normalise(plane.normal);
+		if (IsCollision(segment, plane)) {
 			color = RED;
 		}
 		else {
@@ -564,8 +579,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawPlane(plane, worldViewProjectionMatrix, viewPortMatrix, WHITE);
-		DrawSphere(sphere1, worldViewProjectionMatrix, viewPortMatrix, color);
-
+		//DrawSphere(sphere1, worldViewProjectionMatrix, viewPortMatrix,color);
+		Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
