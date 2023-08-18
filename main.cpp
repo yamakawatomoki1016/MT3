@@ -1,4 +1,3 @@
-
 #define _USE_MATH_DEFINES
 
 #include <Novice.h>
@@ -6,6 +5,8 @@
 #include <cassert>
 #include <numbers>
 #include <imgui.h>
+
+#include <algorithm>
 
 struct Matrix4x4
 {
@@ -613,6 +614,21 @@ bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
 
 }
 
+bool IsCollision(const AABB& aabb, const Sphere& sphere) {
+	Vector3 clossestPoint{
+		std::clamp(sphere.center.x, aabb.min.x, aabb.max.x),
+		std::clamp(sphere.center.y, aabb.min.y, aabb.max.y),
+		std::clamp(sphere.center.z, aabb.min.z, aabb.max.z)
+	};
+
+	float distance = Length(Subtract(clossestPoint, sphere.center));
+	if (distance <= sphere.radius) {
+		return true;
+	}
+
+	return false;
+
+}
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -632,15 +648,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		.min{-0.5f, -0.5f, -0.5f},
 		.max{ 0.0f, 0.0f, 0.0f}
 	};
-	AABB aabb2{
-		.min{0.2f, 0.2f, 0.2f},
-		.max{ 1.0f, 1.0f, 1.0f}
+
+	Sphere sphere{
+		{1.0f, 1.0f, 1.0f},
+		0.1f
 	};
 
 	uint32_t colorS1 = WHITE;
 	uint32_t colorS2 = WHITE;
-
-	//unsigned int color = BLACK;
 
 	Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
 	Matrix4x4 cameraMatrix = MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, cameraRotate, cameraTranslate);
@@ -673,12 +688,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		viewportMatrix = MakeViewPortMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		if (IsCollision(aabb1, aabb2)) {
+		if (IsCollision(aabb1, sphere)) {
 			colorS1 = RED;
 		}
 		else {
 			colorS1 = WHITE;
 		}
+
 
 		///
 		/// ↑更新処理ここまで
@@ -691,7 +707,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawGrid(worldViewProjectionMatrix, viewportMatrix);
 
 		DrawAABB(aabb1, worldViewProjectionMatrix, viewportMatrix, colorS1);
-		DrawAABB(aabb2, worldViewProjectionMatrix, viewportMatrix, colorS2);
+		DrawSphere(sphere, worldViewProjectionMatrix, viewportMatrix, colorS2);
 
 		ImGui::Begin("Debug");
 		ImGui::DragFloat3("cameraTRa", &cameraTranslate.x, 0.1f, -50.0f, 50.0f);
@@ -699,9 +715,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ImGui::DragFloat3("AABB1min", &aabb1.min.x, 0.1f, -1.0f, 5.0f);
 		ImGui::DragFloat3("AABB1max", &aabb1.max.x, 0.1f, -1.0f, 5.0f);
-		ImGui::DragFloat3("AABB2min", &aabb2.min.x, 0.1f, -1.0f, 5.0f);
-		ImGui::DragFloat3("AABB2max", &aabb2.max.x, 0.1f, -1.0f, 5.0f);
+		ImGui::DragFloat3("sphereC", &sphere.center.x, 0.1f, -1.0f, 5.0f);
+		ImGui::DragFloat3("sphereR", &sphere.radius, 0.1f, -1.0f, 5.0f);
 		ImGui::End();
+
 
 		///
 		/// ↑描画処理ここまで
