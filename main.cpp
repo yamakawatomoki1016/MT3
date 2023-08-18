@@ -2,6 +2,8 @@
 #include <cmath>	
 #include <assert.h>
 
+const char kWindowTitle[] = "LE2B_27_ヤマカワトモキ_タイトル";
+
 struct Matrix4x4
 {
 	float m[4][4];
@@ -12,6 +14,7 @@ struct Vector2
 	float x;
 	float y;
 };
+
 
 float Cotangent(float b, float a) {
 	return (b / tan(a));
@@ -97,8 +100,6 @@ void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label
 		}
 	}
 }
-const char kWindowTitle[] = "LE2B_27_ヤマカワトモキ_タイトル";
-
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -133,11 +134,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
-
 		MatrixScreenPrintf(0, 0, orthoGraphicMatrix, "orthoGraphicMatrix");
 		MatrixScreenPrintf(0, kRowHeight * 5, perspectiveFovMatrix, "perspectiveFovMatrix");
 		MatrixScreenPrintf(0, kRowHeight * 10, viewPortMatrix, "viewPortMatrix");
-
 		///
 		/// ↑描画処理ここまで
 		///
